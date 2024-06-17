@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Divs</title>
+    <style>
+        .highlight {
+            background-color: yellow;
+        }
+        .hide {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" id="search-input" placeholder="Nhập từ khóa">
+    <button id="search-button">Tìm kiếm</button>
+    <div class="box-map-count">
+        Có <strong id="result-count"></strong> cửa hàng gần vị trí hiện tại của bạn
+    </div>
+    <div class="content">
+        <div class="item"><strong class="title-map">122 Thái Hà, Hà Nội</strong></div>
+        <div class="item"><strong class="title-map">126 Phố Huế, Hà Nội</strong></div>
+        <div class="item"><strong class="title-map">392 Cầu Giấy, Hà Nội</strong></div>
+        <div class="item"><strong class="title-map">89 Tam Trinh, Hoàng Mai, Hà Nội</strong></div>
+        <div class="item"><strong class="title-map">382 Nguyễn Văn Cừ, Hà Nội</strong></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+$(document).ready(function() {
+    // Function to update the count of visible items
+    function updateVisibleCount() {
+        var visibleCount = $('.content .item:not(.hide)').length;
+        $('#result-count').text(visibleCount);
+    }
+
+    // Initial count on page load
+    updateVisibleCount();
+
+    // Function to perform search
+    function SearchMap() {
+        var searchValue = $('#search-input').val().trim().toLowerCase();
+
+        $('.item').addClass('hide');
+
+        // Highlight and show divs that contain the search text
+        if (searchValue !== '') {
+            // Remove hide class for matching items
+            $('.item').filter(function() {
+                return $(this).find('.title-map').text().toLowerCase().indexOf(searchValue) !== -1;
+            }).removeClass('hide');
+        } else {
+            // Show all items when search is empty
+            $('.item').removeClass('hide');
+        }
+
+        // Update visible count after filtering
+        updateVisibleCount();
+    }
+
+    // Event listener for keyup on search input
+    $('#search-input').on('keyup', function() {
+        SearchMap();
+    });
+
+    // Event listener for click on search button
+    $('#search-button').on('click', function() {
+        SearchMap();
+    });
+});
+
+    </script>
+</body>
+</html>

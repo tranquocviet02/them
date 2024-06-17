@@ -1,0 +1,113 @@
+<script>
+    $(document).ready(function () {
+        function initMap() {
+            var mapOptions = {
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            var map = new google.maps.Map(document.getElementById("map"), mapOptions);
+            var bounds = new google.maps.LatLngBounds();
+            var infoWindow = new google.maps.InfoWindow();
+            var locations = [];
+
+            fetchShops();
+
+            function fetchShops() {
+                $.ajax({
+                    url: '/API/getAllShops', // Adjust URL based on your API endpoint
+                    method: 'POST',
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.length > 0) {
+                            var firstShop = null;
+                            data.forEach(function (item, index) {
+                                var shopLocation = {
+                                    lat: parseFloat(item.Lat),
+                                    lng: parseFloat(item.Long),
+                                    title: item.Address,
+                                    cityID: item.CityID,
+                                    info: "Điện thoại: <a style='color: #18ac4e;' href='tel:" + item.Phone + "'>" + item.Phone + "</a> | <a href='https://oa.zalo.me/262829019064124420'><img style='width:14px;' src='https://hoanghamobile.com/Content/web/img/zalo.svg' /> Chat Zalo</a>",
+                                    workTime: item.WorkTime,
+                                    urlToShop: "<a style='color: #18ac4e;' href='https://www.google.com/maps/dir/?api=1&destination=" + parseFloat(item.Lat) + ',' + parseFloat(item.Long) + "' target='_blank'>Bản đồ đường đi</a>",
+                                    urlShop: "<a style='color: #18ac4e;' href='https://www.google.com/maps/search/?api=1&query=" + parseFloat(item.Lat) + ',' + parseFloat(item.Long) + "' target='_blank'>địa chỉ shop</a>",
+                                    zoom: "<a style='color: #18ac4e;' class='zoom-btn' data-lat='" + item.Lat + "' data-lng='" + item.Long + "'>Phóng to</a>",
+                                    outzoom: "<a style='color: #18ac4e;' class='out-zoom-btn' data-lat='" + item.Lat + "' data-lng='" + item.Long + "'>Thu nhỏ</a>"
+                                };
+                                locations.push(shopLocation);
+
+                                var marker = new google.maps.Marker({
+                                    position: { lat: shopLocation.lat, lng: shopLocation.lng },
+                                    map: map,
+                                    title: shopLocation.title
+                                });
+
+                                if (index === 0) {
+                                    firstShop = {
+                                        marker: marker,
+                                        shopLocation: shopLocation
+                                    };
+                                }
+
+                                google.maps.event.addListener(marker, 'click', function () {
+                                    var content = "<div><strong>" + shopLocation.title + "</strong><br>" + shopLocation.info + "<br> " + shopLocation.zoom + " | " + shopLocation.outzoom + " <br> " + shopLocation.urlToShop + "</div>";
+                                    infoWindow.setContent(content);
+                                    infoWindow.open(map, marker);
+                                });
+
+                                var listItem = $('<div class="item" data-id="' + shopLocation.cityID + '"><div class="info"><strong>' + shopLocation.title + '</strong><p>' + shopLocation.info + '</p> <p>' + shopLocation.urlToShop + ' </p> </div></div>');
+
+                                $('ul#location-list').append(listItem);
+
+                                listItem.on('click', function () {
+                                    map.panTo(marker.getPosition());
+                                    map.setZoom(12);
+                                    var content = "<div><strong>" + shopLocation.title + "</strong><br>" + shopLocation.info + "<br> " + shopLocation.zoom + " | " + shopLocation.outzoom + " <br> " + shopLocation.urlToShop + "</div>";
+                                    infoWindow.setContent(content);
+                                    infoWindow.open(map, marker);
+                                });
+
+                                bounds.extend(marker.position);
+
+                                // Calculate distance from firstShop to current shopLocation
+                                if (firstShop) {
+                                    var distance = calculateDistance(firstShop.shopLocation.lat, firstShop.shopLocation.lng, shopLocation.lat, shopLocation.lng);
+                                    console.log('Distance from first shop to ' + shopLocation.title + ': ' + distance.toFixed(2) + ' meters');
+                                    // You can use distance for further processing as needed
+                                }
+                            });
+
+                            if (firstShop) {
+                                map.panTo(firstShop.marker.getPosition());
+                                map.setZoom(12);
+
+                                var content = "<div><strong>" + firstShop.shopLocation.title + "</strong><br>" +
+                                    firstShop.shopLocation.info + "<br>"
+                                    + firstShop.shopLocation.zoom + " | "
+                                    + firstShop.shopLocation.outzoom + "<br>"
+                                    + firstShop.shopLocation.urlToShop + "</div>";
+
+                                infoWindow.setContent(content);
+                                infoWindow.open(map, firstShop.marker);
+                            }
+                            map.fitBounds(bounds);
+                        } else {
+                            console.log('No shop data available.');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching shops data:', error);
+                    }
+                });
+            }
+
+            function calculateDistance(lat1, lon1, lat2, lon2) {
+                var p1 = new google.maps.LatLng(lat1, lon1);
+                var p2 = new google.maps.LatLng(lat2, lon2);
+                var distance = google.maps.geometry.spherical.computeDistanceBetween(p1, p2);
+                return distance;
+            }
+        }
+
+        initMap();
+    });
+
+</script>

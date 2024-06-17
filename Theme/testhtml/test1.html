@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geolocation and Nearby Shops</title>
+    <!-- Include Google Maps API -->
+    <script src="https://maps.google.com/maps/api/js?key=AIzaSyB0N_-tAbZcVZryZxPHbYLbsURBSIqzhaU&libraries=places&v=3.39"></script>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Geolocation and Nearby Shops</h1>
+    <div id="map"></div>
+    <p>
+        <label for="radius">Search radius (meters): </label>
+        <input type="number" id="radius" value="500">
+        <button onclick="searchNearbyShops()">Search Nearby Shops</button>
+    </p>
+
+    <script>
+        var map;
+        var userLocation;
+
+        function initMap() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
+            } else {
+                console.error("Geolocation is not supported by your browser.");
+            }
+
+            function successCallback(position) {
+                var latitude = position.coords.latitude;
+                var longitude = position.coords.longitude;
+
+                userLocation = new google.maps.LatLng(latitude, longitude);
+
+                var mapOptions = {
+                    center: userLocation,
+                    zoom: 15,
+                    mapTypeId: google.maps.MapTypeId.ROADMAP
+                };
+
+                map = new google.maps.Map(document.getElementById("map"), mapOptions);
+
+                var marker = new google.maps.Marker({
+                    position: userLocation,
+                    map: map,
+                    title: "Your Location"
+                });
+
+                var infoWindow = new google.maps.InfoWindow({
+                    content: "Your Location: " + latitude + ", " + longitude
+                });
+
+                marker.addListener('click', function() {
+                    infoWindow.open(map, marker);
+                });
+            }
+
+            function errorCallback(error) {
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        console.error("User denied the request for Geolocation.");
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        console.error("Location information is unavailable.");
+                        break;
+                    case error.TIMEOUT:
+                        console.error("The request to get user location timed out.");
+                        break;
+                    default:
+                        console.error("An unknown error occurred.");
+                        break;
+                }
+            }
+        }
+
+        function searchNearbyShops() {
+            var radius = parseInt(document.getElementById('radius').value);
+            if (isNaN(radius) || radius <= 0) {
+                alert("Please enter a valid radius in meters.");
+                return;
+            }
+
+            var service = new google.maps.places.PlacesService(map);
+
+            service.nearbySearch({
+                location: userLocation,
+                radius: radius,
+                type: ['store']  // Adjust type as per your requirement, e.g., 'restaurant', 'cafe', etc.
+            }, processResults);
+        }
+
+        function processResults(results, status) {
+            if (status === google.maps.places.PlacesServiceStatus.OK) {
+                for (var i = 0; i < results.length; i++) {
+                    createMarker(results[i]);
+                }
+            } else {
+                console.error("Places service status not OK:", status);
+            }
+        }
+
+        function createMarker(place) {
+            var marker = new google.maps.Marker({
+                map: map,
+                position: place.geometry.location,
+                title: place.name
+            });
+
+            var infowindow = new google.maps.InfoWindow();
+            google.maps.event.addListener(marker, 'click', function() {
+                infowindow.setContent('<div><strong>' + place.name + '</strong><br>' +
+                    'Place ID: ' + place.place_id + '<br>' +
+                    place.vicinity + '</div>');
+                infowindow.open(map, this);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            initMap();
+        });
+    </script>
+</body>
+</html>
